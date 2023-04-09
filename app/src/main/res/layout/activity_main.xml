@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <EditText
+        android:id="@+id/message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="aWx5cmF6YW4="
+        android:inputType="textPersonName"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_editor_absoluteX="104dp" />
+
+    <EditText
+        android:id="@+id/keyField"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:ems="10"
+        android:hint="key"
+        android:inputType="textPersonName"
+        app:layout_constraintTop_toBottomOf="@+id/deleteButton"
+        tools:layout_editor_absoluteX="0dp" />
+
+    <Button
+        android:id="@+id/internalButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save To Internal"
+        android:onClick="saveToInternal"
+        app:layout_constraintTop_toBottomOf="@+id/message"
+        tools:layout_editor_absoluteX="117dp" />
+
+    <Button
+        android:id="@+id/externalButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="saveToExternal"
+        android:text="Save To External"
+        app:layout_constraintTop_toBottomOf="@+id/internalButton"
+        tools:layout_editor_absoluteX="0dp" />
+
+    <Button
+        android:id="@+id/encryptButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="encrypt"
+        android:text="Encrypt"
+        app:layout_constraintTop_toBottomOf="@+id/externalButton"
+        tools:layout_editor_absoluteX="0dp" />
+
+    <Button
+        android:id="@+id/decryptButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="decrypt"
+        android:text="Decrypt"
+        app:layout_constraintTop_toBottomOf="@+id/encryptButton"
+        tools:layout_editor_absoluteX="0dp" />
+
+    <Button
+        android:id="@+id/deleteButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="deleteAll"
+        android:text="DELETE EVERYTHING!!"
+        app:layout_constraintTop_toBottomOf="@+id/decryptButton"
+        tools:layout_editor_absoluteX="0dp" />
+
+    <Button
+        android:id="@+id/readButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="readText"
+        android:text="Read file"
+        app:layout_constraintTop_toBottomOf="@+id/keyField"
+        tools:layout_editor_absoluteX="16dp" />
+
+    <TextView
+        android:id="@+id/outputText"
+        android:layout_width="match_parent"
+        android:layout_height="261dp"
+        android:text="NO OUTPUT. HEAD EMPTY."
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/readButton" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
