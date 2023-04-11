@@ -53,15 +53,16 @@ public class CryptoUtils extends AppCompatActivity {
         }
     }
 
-
+    //Generates the IV  
+    public static IvParameterSpec generateIv() {
+        byte[] iv = new byte[16];
+        new SecureRandom().nextBytes(iv);
+        return new IvParameterSpec(iv);
+    }
 
     public void encryptFile(String algorithm, SecretKey key,
-                            String inputFile, String outputFile) throws Exception {
+                            String inputFile, String outputFile, IvParameterSpec iv) throws Exception {
         try {
-            //Generate the IV
-            byte[] ivTemp = new byte[16];
-            new SecureRandom().nextBytes(ivTemp);
-            IvParameterSpec iv = new IvParameterSpec(ivTemp);
 
             //Encrypt the actual file stream
             Cipher cipher = Cipher.getInstance(algorithm);
@@ -89,5 +90,6 @@ public class CryptoUtils extends AppCompatActivity {
             throw new Exception("Failed to encrypt message "+ e.getMessage());
         }
     }
+
 
 }
