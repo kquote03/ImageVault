@@ -11,65 +11,83 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 import java.util.Arrays;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 
 public class CryptoUtils extends AppCompatActivity {
-
+    //Transferring the Context from MainActivity
+    //(or any other calling activity lmao)
     Context context;
-
     public CryptoUtils(Context context){
         this.context = context;
     }
-    private static final String ALGORITHM = "AES";
-    private static final String TRANSFORMATION = "AES";
 
-    public void encrypt(String key, String inputFile, String outputFile)
-            throws IllegalArgumentException {
-        doCrypto(Cipher.ENCRYPT_MODE, key, inputFile, outputFile);
-    }
-
-    public void decrypt(String key, String inputFile, String outputFile)
-            throws IllegalArgumentException {
-        doCrypto(Cipher.DECRYPT_MODE, key, inputFile, outputFile);
-    }
-
-    private void doCrypto(int cipherMode, String key, String inputFile,
-                                 String outputFile) throws IllegalArgumentException {
+    //Derives 256 bit key from a password
+    //Also salts it
+    public SecretKey getKeyFromPassword(String password, String salt) throws Exception {
         try {
-            Key secretKey = new SecretKeySpec(key.getBytes("UTF-8"), ALGORITHM);
-            Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-            cipher.init(cipherMode, secretKey);
-            FileInputStream inputStream = context.openFileInput(inputFile);
-            byte[] inputBytes = new byte[(int) inputFile.length()];
-            inputStream.read(inputBytes);
-
-            int blockSize = cipher.getBlockSize();
-            int paddingSize = blockSize - (inputBytes.length % blockSize);
-            byte[] paddedInputBytes = Arrays.copyOf(inputBytes, inputBytes.length + paddingSize);
-
-
-            byte[] outputBytes = cipher.doFinal(inputBytes);
-
-            FileOutputStream outputStream = context.openFileOutput(outputFile,Context.MODE_PRIVATE);
-            outputStream.write(outputBytes);
-
-            inputStream.close();
-            outputStream.close();
-
-        } catch (NoSuchPaddingException | NoSuchAlgorithmException
-                 | InvalidKeyException | BadPaddingException
-                 | IllegalBlockSizeException | IOException ex) {
-            throw new IllegalArgumentException("Error encrypting/decrypting file", ex);
+            SecretKeyFactory f = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            KeySpec spec = new PBEKeySpec(password.toCharArray(), salt.getBytes(), 65536, 256);
+            SecretKey key = new SecretKeySpec(f.generateSecret(spec).getEncoded(), "AES");
+            return key;
+        }
+        catch ( NoSuchAlgorithmException | InvalidKeySpecException e){
+            throw new Exception("Failed to generate secret key "+ e.getMessage());
         }
     }
+
+
+
+    public void encryptFile(String algorithm, SecretKey key,
+                            String inputFile, String outputFile) throws Exception {
+        try {
+            //Generate the IV
+            byte[] ivTemp = new byte[16];
+            new SecureRandom().nextBytes(ivTemp);
+            IvParameterSpec iv = new IvParameterSpec(ivTemp);
+
+            //Encrypt the actual file stream
+            Cipher cipher = Cipher.getInstance(algorithm);
+            cipher.init(Cipher.ENCRYPT_MODE, key, iv);
+            FileInputStream inputStream = context.openFileInput(inputFile);
+            FileOutputStream outputStream = context.openFileOutput(outputFile, context.MODE_PRIVATE);
+            byte[] buffer = new byte[64];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                byte[] output = cipher.update(buffer, 0, bytesRead);
+                if (output != null) {
+                    outputStream.write(output);
+                }
+            }
+            byte[] outputBytes = cipher.doFinal();
+            if (outputBytes != null) {
+                outputStream.write(outputBytes);
+            }
+            inputStream.close();
+            outputStream.close();
+        }
+        catch (IOException | NoSuchPaddingException |
+                NoSuchAlgorithmException| InvalidAlgorithmParameterException| InvalidKeyException|
+                BadPaddingException| IllegalBlockSizeException e){
+            throw new Exception("Failed to encrypt message "+ e.getMessage());
+        }
+    }
+
 }
