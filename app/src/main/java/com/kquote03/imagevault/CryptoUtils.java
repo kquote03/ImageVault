@@ -53,15 +53,16 @@ public class CryptoUtils extends AppCompatActivity {
         }
     }
 
-    //Generates the IV  
+    //Generates the IV
     public static IvParameterSpec generateIv() {
         byte[] iv = new byte[16];
         new SecureRandom().nextBytes(iv);
         return new IvParameterSpec(iv);
     }
 
-    public void encryptFile(String algorithm, SecretKey key,
+    public void encrypt(SecretKey key,
                             String inputFile, String outputFile, IvParameterSpec iv) throws Exception {
+        String algorithm = "AES/CBC/PKCS5Padding";
         try {
 
             //Encrypt the actual file stream
@@ -88,6 +89,38 @@ public class CryptoUtils extends AppCompatActivity {
                 NoSuchAlgorithmException| InvalidAlgorithmParameterException| InvalidKeyException|
                 BadPaddingException| IllegalBlockSizeException e){
             throw new Exception("Failed to encrypt message "+ e.getMessage());
+        }
+    }
+
+    public void decrypt(SecretKey key,
+                            String inputFile, String outputFile, IvParameterSpec iv) throws Exception {
+        String algorithm = "AES/CBC/PKCS5Padding";
+        try {
+
+            //Encrypt the actual file stream
+            Cipher cipher = Cipher.getInstance(algorithm);
+            cipher.init(Cipher.DECRYPT_MODE, key, iv);
+            FileInputStream inputStream = context.openFileInput(inputFile);
+            FileOutputStream outputStream = context.openFileOutput(outputFile, context.MODE_PRIVATE);
+            byte[] buffer = new byte[64];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                byte[] output = cipher.update(buffer, 0, bytesRead);
+                if (output != null) {
+                    outputStream.write(output);
+                }
+            }
+            byte[] outputBytes = cipher.doFinal();
+            if (outputBytes != null) {
+                outputStream.write(outputBytes);
+            }
+            inputStream.close();
+            outputStream.close();
+        }
+        catch (IOException | NoSuchPaddingException |
+               NoSuchAlgorithmException| InvalidAlgorithmParameterException| InvalidKeyException|
+               BadPaddingException| IllegalBlockSizeException e){
+            throw new Exception("Failed to decrypt message "+ e.getMessage());
         }
     }
 
