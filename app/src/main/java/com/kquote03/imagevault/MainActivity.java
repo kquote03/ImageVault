@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
     FileOutputStream fStream;
     File externalFilePath;
     File externalFile;
-    CryptoUtils bill;
+    CryptoUtils bill = new CryptoUtils(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
