@@ -1,52 +1,36 @@
 package com.kquote03.imagevault;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Base64;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
-import java.util.Arrays;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.SecretKeySpec;
 
 
 public class MainActivity extends AppCompatActivity {
     SharedPreferences sharedprefs;
     String sharedPrefFilename = "com.kquote03.imagevault";
 
-    String internalFile = "7a7a";
+    String internalFile = "7a7a7a7a";
     String externalFileName = "File3";
+    String tempPasswd = "SSBsb3ZlIHlvdSwgWWhnaHUh";
     OutputStream oStream;
     FileOutputStream fStream;
     File externalFilePath;
@@ -111,19 +95,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void encrypt(View view) throws Exception {
-        IvParameterSpec iv = generateIv();
-
         sharedprefs = getSharedPreferences(sharedPrefFilename, MODE_PRIVATE);
         SharedPreferences.Editor sharedprefsEditor = sharedprefs.edit();
-        sharedprefsEditor.putString("iv", Base64.encodeToString(iv.getIV(),Base64.DEFAULT));
+
+        OpenSecrets enc = bill.encrypt(tempPasswd, internalFile);
+
+        sharedprefsEditor.putString("iv", Base64.encodeToString(enc.getIv().getIV(),Base64.DEFAULT));
+        sharedprefsEditor.putString("salt", Base64.encodeToString(enc.getSalt(),Base64.DEFAULT));
         sharedprefsEditor.apply();
-        encryptFile(getKeyFromPassword("SSBsb3ZlIHlvdSwgWWhnaHUh","PDM="),internalFile, internalFile, iv);
     }
     public void decrypt(View view) throws Exception {
         sharedprefs = getSharedPreferences(sharedPrefFilename, MODE_PRIVATE);
+        byte[] salt = Base64.decode(sharedprefs.getString("salt","ERROR"),Base64.DEFAULT);
         byte[] rawIv = Base64.decode(sharedprefs.getString("iv","ERROR"),Base64.DEFAULT);
         IvParameterSpec iv = new IvParameterSpec(rawIv);
-        decryptFile(getKeyFromPassword("SSBsb3ZlIHlvdSwgWWhnaHUh","PDM="),internalFile, internalFile, iv);
+        OpenSecrets sec = new OpenSecrets(iv, salt);
+
+        bill.decrypt(tempPasswd,internalFile, sec);
     }
 
     public void readText(View view) {
@@ -139,92 +127,4 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, e.getMessage(),Toast.LENGTH_LONG);
         }
     }
-
-    public SecretKey getKeyFromPassword(String password, String salt) throws Exception {
-        try {
-            SecretKeyFactory f = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-            KeySpec spec = new PBEKeySpec(password.toCharArray(), salt.getBytes(), 65536, 256);
-            SecretKey key = new SecretKeySpec(f.generateSecret(spec).getEncoded(), "AES");
-            return key;
-        }
-        catch (NoSuchAlgorithmException | InvalidKeySpecException e){
-            throw new Exception("Failed to generate secret key "+ e.getMessage());
-        }
-    }
-
-    //Generates the IV
-    public static IvParameterSpec generateIv() {
-        byte[] iv = new byte[16];
-        new SecureRandom().nextBytes(iv);
-        return new IvParameterSpec(iv);
-    }
-
-    public void encryptFile(SecretKey key,
-                        String inputFile, String outputFile, IvParameterSpec iv) throws Exception {
-        String algorithm = "AES/CBC/PKCS5Padding";
-        try {
-
-            //Encrypt the actual file stream
-            Cipher cipher = Cipher.getInstance(algorithm);
-            cipher.init(Cipher.ENCRYPT_MODE, key, iv);
-            InputStream inputStream = openFileInput(inputFile);
-            oStream = openFileOutput(internalFile, MODE_PRIVATE);
-            byte[] buffer = new byte[2];
-            int bytesRead;
-            while ((bytesRead = new BufferedReader(new InputStreamReader(inputStream)).read()) != -1 || true) {
-                byte[] output = cipher.update(buffer, 0, bytesRead);
-                if (output != null) {
-                    oStream.write(output);
-                }
-                Log.d("bytes ", new String(String.valueOf(bytesRead)));
-            }
-            byte[] outputBytes = cipher.doFinal();
-            if (outputBytes != null) {
-                Log.d("haha", Arrays.toString(outputBytes));
-                oStream.write(outputBytes);
-            }
-            inputStream.close();
-            oStream.close();
-        }
-        catch (IOException | NoSuchPaddingException |
-               NoSuchAlgorithmException | InvalidAlgorithmParameterException | InvalidKeyException |
-               BadPaddingException | IllegalBlockSizeException e){
-            throw new Exception("Failed to encrypt message "+ e.getMessage());
-        }
-    }
-
-    public void decryptFile(SecretKey key,
-                        String inputFile, String outputFile, IvParameterSpec iv) {
-        String algorithm = "AES/CBC/PKCS5Padding";
-        try {
-            //Decrypt the actual file stream
-            Cipher cipher = Cipher.getInstance(algorithm);
-            cipher.init(Cipher.DECRYPT_MODE, key, iv);
-            FileInputStream inputStream = openFileInput(inputFile);
-            oStream = openFileOutput(outputFile, MODE_PRIVATE);
-            byte[] buffer = new byte[64];
-            int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                byte[] output = cipher.update(buffer, 0, bytesRead);
-                Log.d("current buff: ",Arrays.toString(output));
-                if (output != null) {
-                    oStream.write(output);
-                }
-            }
-            byte[] outputBytes = cipher.doFinal();
-            Log.d("After buff: ", new String(outputBytes));
-            if (outputBytes != null) {
-                oStream.write(outputBytes);
-            }
-            inputStream.close();
-            oStream.close();
-        }
-        catch (IOException | NoSuchPaddingException |
-               NoSuchAlgorithmException| InvalidAlgorithmParameterException| InvalidKeyException|
-               BadPaddingException| IllegalBlockSizeException e){
-            throw new IllegalArgumentException("Failed to decrypt message "+ e.getMessage());
-        }
-    }
-
-
 }
