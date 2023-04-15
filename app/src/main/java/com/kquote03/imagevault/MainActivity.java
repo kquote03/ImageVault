@@ -29,7 +29,6 @@ import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
-import com.google.common.io.ByteStreams;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -172,14 +171,13 @@ public class MainActivity extends AppCompatActivity {
             oStream = openFileOutput(internalFile, MODE_PRIVATE);
             byte[] buffer = new byte[2];
             int bytesRead;
-            byte[] bytes = ByteStreams.toByteArray(inputStream);
-            //while ((bytesRead = new BufferedReader(new InputStreamReader(inputStream)).read()) != -1 || true) {
-                /*byte[] output = cipher.update(buffer, 0, bytesRead);
+            while ((bytesRead = new BufferedReader(new InputStreamReader(inputStream)).read()) != -1 || true) {
+                byte[] output = cipher.update(buffer, 0, bytesRead);
                 if (output != null) {
                     oStream.write(output);
-                }*/
-                //Log.d("bytes ", new String(String.valueOf(bytesRead)));
-            //}
+                }
+                Log.d("bytes ", new String(String.valueOf(bytesRead)));
+            }
             byte[] outputBytes = cipher.doFinal();
             if (outputBytes != null) {
                 Log.d("haha", Arrays.toString(outputBytes));
