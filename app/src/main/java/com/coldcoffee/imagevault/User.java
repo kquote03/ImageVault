@@ -12,5 +12,8 @@ public class User {
     @ColumnInfo(name = "username")
     public String username;
 
+    @ColumnInfo(name = "opensecret")
+    public OpenSecrets openSecret;
+
 
 }
