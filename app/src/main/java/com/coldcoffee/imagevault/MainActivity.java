@@ -1,4 +1,4 @@
-package com.kquote03.imagevault;
+package com.coldcoffee.imagevault;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -26,7 +26,7 @@ import javax.crypto.spec.IvParameterSpec;
 
 public class MainActivity extends AppCompatActivity {
     SharedPreferences sharedprefs;
-    String sharedPrefFilename = "com.kquote03.imagevault";
+    String sharedPrefFilename = "com.coldcoffee.imagevault";
 
     String internalFile = "7a7a7a7a";
     String externalFileName = "File3";

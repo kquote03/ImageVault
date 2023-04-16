@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.kquote03.imagevault'
+    namespace 'com.coldcoffee.imagevault'
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.kquote03.imagevault"
+        applicationId "com.coldcoffee.imagevault"
         minSdk 24
         targetSdk 33
         versionCode 1

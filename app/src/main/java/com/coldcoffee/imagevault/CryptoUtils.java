@@ -1,25 +1,21 @@
-package com.kquote03.imagevault;
+package com.coldcoffee.imagevault;
 
 import android.content.Context;
-import android.os.Debug;
-import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.Key;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
-import java.util.Arrays;
 import java.util.Random;
 
 import javax.crypto.BadPaddingException;
@@ -35,7 +31,7 @@ import javax.crypto.spec.SecretKeySpec;
 /**
  * CryptoUtils master class. Everything you need to handle crypto except poorly written an coded
  * by yours truly 3_3
- *
+ * Signed SSBsb3ZlIHlvdSwgWWhnaHUh
  */
 public class CryptoUtils extends AppCompatActivity {
     //Transferring the Context from MainActivity
@@ -62,6 +58,33 @@ public class CryptoUtils extends AppCompatActivity {
         catch ( NoSuchAlgorithmException | InvalidKeySpecException e){
             throw new Exception("Failed to generate secret key "+ e.getMessage());
         }
+    }
+
+    /**
+     * Stores a key in the Android Keystore where each key
+     * corresponds to a username.
+     * @param username The username taken from the UI
+     * @param key The key to store of type SecretKey
+     * @throws KeyStoreException
+     * @throws CertificateException
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public void storeSecretKey(String username, SecretKey key) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
+        KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+        keyStore.load(null);
+        KeyStore.SecretKeyEntry secretKeyEntry = new KeyStore.SecretKeyEntry(key);
+        keyStore.setEntry(username, secretKeyEntry, null);
+    }
+
+    public SecretKey getSecretKey(String username, String passphrase, OpenSecrets openSecrets) throws Exception {
+        SecretKey generatedKey = getKeyFromPassword(passphrase, openSecrets.getSalt());
+        KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+        keyStore.load(null);
+        KeyStore.SecretKeyEntry secretKeyEntry = (KeyStore.SecretKeyEntry) keyStore.getEntry("AndroidKeyStore", null);
+        if (generatedKey.equals(secretKeyEntry.getSecretKey()))
+            return secretKeyEntry.getSecretKey();
+        else throw new KeyStoreException();
     }
 
     /**

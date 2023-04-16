@@ -1,4 +1,4 @@
-package com.kquote03.imagevault;
+package com.coldcoffee.imagevault;
 
 import javax.crypto.spec.IvParameterSpec;
 
