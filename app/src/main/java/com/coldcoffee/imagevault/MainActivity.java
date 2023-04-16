@@ -11,6 +11,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.room.Room;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -36,13 +37,15 @@ public class MainActivity extends AppCompatActivity {
     File externalFilePath;
     File externalFile;
     CryptoUtils bill = new CryptoUtils(this);
+    AppDB db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        externalFilePath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
-        externalFile  = new File(externalFilePath, externalFileName);
+        AppDB db = Room.databaseBuilder(getApplicationContext(),
+                AppDB.class, "user").build();
+
     }
 
     public void saveToInternal(View view) {
@@ -59,34 +62,6 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-    }
-
-    public boolean isExternalStorageWritable() {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            return true;
-        }
-        return false;
-    }
-
-    public void saveToExternal(View view) {
-        EditText textVar = findViewById(R.id.message);
-        String message = textVar.getText().toString();
-        if(isExternalStorageWritable()){
-            try {
-                fStream = new FileOutputStream(externalFile);
-                fStream.write(message.getBytes());
-                fStream.close();
-                Toast.makeText(getApplicationContext(),"File "+externalFileName+" created at "+getFilesDir().getAbsolutePath(),Toast.LENGTH_LONG).show();
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        else{
-            Toast.makeText(getApplicationContext(), "External Storage Unavailable",Toast.LENGTH_LONG).show();
-        }
     }
 
     public void deleteAll(View view) {
