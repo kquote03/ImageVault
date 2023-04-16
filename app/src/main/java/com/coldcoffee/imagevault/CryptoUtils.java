@@ -29,7 +29,7 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * CryptoUtils master class. Everything you need to handle crypto except poorly written an coded
+ * CryptoUtils master class. Everything you need to handle crypto except poorly written and coded
  * by yours truly 3_3
  * Signed SSBsb3ZlIHlvdSwgWWhnaHUh
  */
