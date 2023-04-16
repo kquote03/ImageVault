@@ -30,12 +30,9 @@ public class MainActivity extends AppCompatActivity {
     String sharedPrefFilename = "com.coldcoffee.imagevault";
 
     String internalFile = "7a7a7a7a";
-    String externalFileName = "File3";
     String tempPasswd = "SSBsb3ZlIHlvdSwgWWhnaHUh";
     OutputStream oStream;
     FileOutputStream fStream;
-    File externalFilePath;
-    File externalFile;
     CryptoUtils bill = new CryptoUtils(this);
     AppDB db;
 
@@ -65,7 +62,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void deleteAll(View view) {
-        externalFile.delete();
         getApplicationContext().deleteFile(internalFile);
     }
 
