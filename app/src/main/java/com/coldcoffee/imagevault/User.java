@@ -5,7 +5,7 @@ import androidx.room.Entity;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-//Prevets from having duplicate usernames
+//Prevents from having duplicate usernames
 @Entity(indices = {@Index(value = {"username"},unique = true)})
 public class User {
 
