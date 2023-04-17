@@ -1,6 +1,8 @@
 package com.coldcoffee.imagevault;
 
 import android.content.Context;
+import android.security.keystore.KeyProperties;
+import android.security.keystore.KeyProtection;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -70,11 +72,11 @@ public class CryptoUtils extends AppCompatActivity {
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    public void storeSecretKey(String username, SecretKey key) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
+    public void storeSecretKey(String username, SecretKey key, String password) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
         KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
         KeyStore.SecretKeyEntry secretKeyEntry = new KeyStore.SecretKeyEntry(key);
-        keyStore.setEntry(username, secretKeyEntry, null);
+        keyStore.setEntry(username, secretKeyEntry, new KeyProtection.Builder(KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT).build());
     }
 
     public SecretKey getSecretKey(String username, String passphrase, OpenSecrets openSecrets) throws Exception {
