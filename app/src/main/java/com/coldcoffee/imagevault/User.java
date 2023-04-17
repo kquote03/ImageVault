@@ -2,9 +2,11 @@ package com.coldcoffee.imagevault;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-@Entity
+//Prevets from having duplicate usernames
+@Entity(indices = {@Index(value = {"username"},unique = true)})
 public class User {
 
     public User(String username, byte[] iv, byte[] salt) {
