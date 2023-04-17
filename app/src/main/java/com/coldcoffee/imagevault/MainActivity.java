@@ -10,6 +10,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.room.Room;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -17,12 +18,14 @@ public class MainActivity extends AppCompatActivity {
     EditText password;
     Button loginButton;
     TextView signup;
+    AppDB db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        db = Room.databaseBuilder(getApplicationContext(),
+                AppDB.class, "user").build();
         username = findViewById(R.id.username);
         password = findViewById(R.id.password);
         loginButton = findViewById(R.id.loginButton);
