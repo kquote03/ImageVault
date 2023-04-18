@@ -12,8 +12,12 @@
         android:theme="@style/Theme.ImageVault"
         tools:targetApi="31">
         <activity
+            android:name=".SimpleImageActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
+
             <!--
  //disallows other developers' apps from accessing your app's ContentProvider objects
             /*FYI:- A content provider can be used to manage access to a variety of data storage sources, including both structured data,

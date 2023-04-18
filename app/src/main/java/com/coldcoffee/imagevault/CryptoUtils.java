@@ -1,8 +1,10 @@
 package com.coldcoffee.imagevault;
 
 import android.content.Context;
+import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.security.keystore.KeyProtection;
+import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -14,15 +16,19 @@ import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.util.Enumeration;
 import java.util.Random;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -48,7 +54,27 @@ public class CryptoUtils extends AppCompatActivity {
         this.context = context;
     }
 
-    //Derives 256 bit key from a password
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*    //Derives 256 bit key from a password
     //Also salts it
     public SecretKey getKeyFromPassword(String password, byte[] salt) throws Exception {
         try {
@@ -62,7 +88,7 @@ public class CryptoUtils extends AppCompatActivity {
         }
     }
 
-    /**
+    *//**
      * Stores a key in the Android Keystore where each key
      * corresponds to a username.
      * @param username The username taken from the UI
@@ -71,38 +97,74 @@ public class CryptoUtils extends AppCompatActivity {
      * @throws CertificateException
      * @throws IOException
      * @throws NoSuchAlgorithmException
-     */
+     *//*
     public void storeSecretKey(String username, SecretKey key, String password) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
+        byte[] keyBytes = key.getEncoded();
+        SecretKey materialKey = new SecretKeySpec(keyBytes, "AES");
         KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
-        KeyStore.SecretKeyEntry secretKeyEntry = new KeyStore.SecretKeyEntry(key);
-        keyStore.setEntry(username, secretKeyEntry, new KeyProtection.Builder(KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT).build());
+        KeyProtection.Builder builder = new KeyProtection.Builder(KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT);
+        builder.setUserAuthenticationRequired(false);
+        builder.setUserAuthenticationValidityDurationSeconds(30);
+        builder.setBlockModes(KeyProperties.BLOCK_MODE_CBC);
+        builder.setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7);
+        builder.setRandomizedEncryptionRequired(false);
+        KeyProtection protection = builder.build();
+        KeyStore.SecretKeyEntry secretKeyEntry = new KeyStore.SecretKeyEntry(materialKey);
+        keyStore.setEntry(username, secretKeyEntry, protection);
+        Enumeration<String> aliasess = keyStore.aliases();
+        Log.d(" ","");
     }
 
+    *//*public void generateKey(String username) throws CertificateException, IOException, NoSuchAlgorithmException, KeyStoreException, NoSuchProviderException, InvalidAlgorithmParameterException {
+        String AndroidKeyStore = "AndroidKeyStore";
+        String AES_MODE = "AES/GCM/NoPadding";
+        KeyStore keyStore = KeyStore.getInstance(AndroidKeyStore);
+        keyStore.load(null);
+
+        if (!keyStore.containsAlias(username)) {
+            KeyGenerator keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, AndroidKeyStore);
+            keyGenerator.init(
+                    new KeyGenParameterSpec.Builder(username,
+                            KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                            .setBlockModes(KeyProperties.BLOCK_MODE_GCM).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                            .setRandomizedEncryptionRequired(false)
+                            .build());
+            keyGenerator.generateKey();
+        }
+    }
+*//*
     public SecretKey getSecretKey(String username, String passphrase, OpenSecrets openSecrets) throws Exception {
         SecretKey generatedKey = getKeyFromPassword(passphrase, openSecrets.getSalt());
         KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
-        KeyStore.SecretKeyEntry secretKeyEntry = (KeyStore.SecretKeyEntry) keyStore.getEntry("AndroidKeyStore", null);
+        KeyStore.SecretKeyEntry secretKeyEntry = (KeyStore.SecretKeyEntry) keyStore.getEntry(username,null);
+        if(keyStore.containsAlias(username)) Log.d("DEBUG","CONTAINS ALIAS");
+        else Log.d("DEBUG","DOES NOT");
         if (generatedKey.equals(secretKeyEntry.getSecretKey()))
             return secretKeyEntry.getSecretKey();
-        else throw new KeyStoreException();
+        else throw new IllegalArgumentException(""+generatedKey.getEncoded()+" kek "+secretKeyEntry.getSecretKey().getEncoded());
     }
+        public SecretKey getSecretKey(String username) throws CertificateException, IOException, NoSuchAlgorithmException, KeyStoreException, UnrecoverableKeyException {
+            KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+            keyStore.load(null);
+          return (SecretKey) keyStore.getKey(username, null);
+        }
 
-    /**
+    *//**
      * Generates the Initialization Vector
      * @return returns an IvParemeterSpec object (the IV)
-     */
+     *//*
     public static IvParameterSpec generateIv() {
         byte[] iv = new byte[16];
         new SecureRandom().nextBytes(iv);
         return new IvParameterSpec(iv);
     }
 
-    /**
+    *//**
      * Generates a 20-byte salt in a byte array
      * @return 20-byte array of random stuff used for salt (yummy)
-     */
+     *//*
     public static byte[] generateSalt() {
         Random r = new SecureRandom();
         byte[] salt = new byte[20];
@@ -110,13 +172,13 @@ public class CryptoUtils extends AppCompatActivity {
         return salt;
     }
 
-    /**
+    *//**
      * Encrypt wrapper method
      * @param passphrase The password
      * @param file The file name
      * @return throws an OpenSecrets object so the user is forced to deal with it.
      * @see OpenSecrets
-     */
+     *//*
     public OpenSecrets encrypt(String passphrase, String file){
         IvParameterSpec iv = generateIv();
         byte[] salt = generateSalt();
@@ -128,13 +190,13 @@ public class CryptoUtils extends AppCompatActivity {
         return new OpenSecrets(iv, salt);
     }
 
-    /**
+    *//**
      * Decrypt wrapper function
      * @param passphrase The password (duh)
      * @param file The filename
      * @param openSecrets Takes an OpenSecrets object to reuse the IV and salt so chaos does not ensue
      * @see OpenSecrets
-     */
+     *//*
     public void decrypt(String passphrase, String file, OpenSecrets openSecrets){
         IvParameterSpec iv = openSecrets.getIv();
         byte[] salt = openSecrets.getSalt();
@@ -145,7 +207,7 @@ public class CryptoUtils extends AppCompatActivity {
         }
     }
 
-    /**
+    *//**
      * A cipher function that encrypts or decrypts a given filename
      * in internal storage.
      * @param key SecretKey, generated from the passphrase and salt
@@ -154,7 +216,7 @@ public class CryptoUtils extends AppCompatActivity {
      * @param iv initializtion vector (IvParameterSpec)
      * @param cipherMode Cipher.ENCRYPT_MODE or DECRYPT_MODE (1 or 2)
      * @throws Exception
-     */
+     *//*
     public void cipher(SecretKey key,
                         String inputFile, String outputFile, IvParameterSpec iv, int cipherMode) throws Exception {
         String algorithm = "AES/CBC/PKCS5Padding";
@@ -210,5 +272,5 @@ public class CryptoUtils extends AppCompatActivity {
             count++;
         }
         return count;
-    }
+    }*/
 }
