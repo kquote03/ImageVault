@@ -3,8 +3,6 @@ package com.coldcoffee.imagevault;
 import android.content.Context;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
-import android.security.keystore.KeyProtection;
-import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -18,12 +16,8 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
-import java.security.UnrecoverableKeyException;
+import java.security.UnrecoverableEntryException;
 import java.security.cert.CertificateException;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
-import java.util.Enumeration;
-import java.util.Random;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -31,10 +25,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.SecretKeySpec;
 
 /**
  * CryptoUtils master class. Everything you need to handle crypto except poorly written and coded
@@ -48,15 +39,83 @@ public class CryptoUtils extends AppCompatActivity {
 
     /**
      * Contructor, the class cannot be static due to Android f!ckery
+     *
      * @param context Pass the context from the calling object (usually this)
      */
-    public CryptoUtils(Context context){
+    public CryptoUtils(Context context) {
         this.context = context;
     }
 
 
+    public SecretKey keyGen(String username) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException {
+        KeyGenerator keyGenerator = KeyGenerator
+                .getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore");
+        KeyGenParameterSpec keyGenParameterSpec = new KeyGenParameterSpec.Builder(username,
+                KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .build();
+        keyGenerator.init(keyGenParameterSpec);
+        return keyGenerator.generateKey();
+    }
 
+    public SecretKey retrieveKey(String username) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, UnrecoverableEntryException {
+        KeyStore keystore = KeyStore.getInstance("AndroidKeyStore");
+        keystore.load(null);
+        KeyStore.SecretKeyEntry secretKeyEntry = (KeyStore.SecretKeyEntry) keystore.getEntry(username, null);
+        return secretKeyEntry.getSecretKey();
+    }
 
+    public EncryptedPair encryptHash(byte[] hash, SecretKey secretKey) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+        return new EncryptedPair(cipher.doFinal(hash), new IvParameterSpec(cipher.getIV()));
+    }
+
+    public EncryptedPair cryptStream(FileInputStream stream, SecretKey key, int cryptoMode) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException {
+        //Initialize the cipher
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        IvParameterSpec iv = generateIv();
+        cipher.init(cryptoMode, key, iv);
+        //Initialize the input stream from an internal storage file
+        int buffer;
+        int count = 0;
+        byte[] inputBytes = new byte[getFilestreamLen(stream)];
+        int bytesRead;
+        //Copies the entire file to the inputBytes byte array (used as a temporary location
+        //to store the data between inputStream and outputStream).
+        while ((buffer = stream.read()) != -1) {
+            inputBytes[count++] = (byte) buffer;
+        }
+        inputBytes = cipher.doFinal(inputBytes);
+        stream.close();
+        return new EncryptedPair(inputBytes, iv);
+
+    }
+
+    /**
+     * Generates the Initialization Vector
+     *
+     * @return returns an IvParemeterSpec object (the IV)
+     */
+    public static IvParameterSpec generateIv() {
+        byte[] iv = new byte[16];
+        new SecureRandom().nextBytes(iv);
+        return new IvParameterSpec(iv);
+    }
+
+    //Simple method to get the length from a file stream
+    //Probably inefficient. Too Bad.
+    private int getFilestreamLen(FileInputStream i) throws IOException {
+        int count = 0;
+        while (i.read() != -1) {
+            count++;
+        }
+        i.reset();
+        return count;
+    }
+
+}
 
 
 
@@ -151,15 +210,6 @@ public class CryptoUtils extends AppCompatActivity {
           return (SecretKey) keyStore.getKey(username, null);
         }
 
-    *//**
-     * Generates the Initialization Vector
-     * @return returns an IvParemeterSpec object (the IV)
-     *//*
-    public static IvParameterSpec generateIv() {
-        byte[] iv = new byte[16];
-        new SecureRandom().nextBytes(iv);
-        return new IvParameterSpec(iv);
-    }
 
     *//**
      * Generates a 20-byte salt in a byte array
@@ -262,15 +312,6 @@ public class CryptoUtils extends AppCompatActivity {
             a[count++] = (byte)buffer;
         f.close();
     }
+   **/
 
-    //Simple method to get the length from a file stream
-    //Probably inefficient. Too Bad.
-    private int getFilestreamLen(String file) throws IOException {
-        FileInputStream i = context.openFileInput(file);
-        int count = 0;
-        while(i.read() != -1){
-            count++;
-        }
-        return count;
-    }*/
-}
+
