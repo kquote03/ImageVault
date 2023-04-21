@@ -70,9 +70,9 @@ public class MainActivity extends AppCompatActivity {
                     secretKey = cryptoUtils.getKeyFromPassword(password.getText().toString(), salt);
 
                     Intent loggedIn = new Intent(getApplicationContext(), GridViewActivity.class);
-                    loggedIn.putExtra(Base64
-                            .getEncoder()                          //they shouldnt allow me near a phone
-                            .encodeToString(secretKey.getEncoded()), "null");
+                    loggedIn.putExtra("key", Base64
+                            .getEncoder()
+                            .encodeToString(secretKey.getEncoded()));
                     startActivity(loggedIn);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
