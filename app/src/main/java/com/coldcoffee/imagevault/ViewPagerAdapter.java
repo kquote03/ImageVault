@@ -1,8 +1,12 @@
 package com.coldcoffee.imagevault;
 
+import static android.content.Context.MODE_PRIVATE;
+
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Build;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.viewpager.widget.PagerAdapter;
 
 import java.io.FileNotFoundException;
@@ -18,6 +23,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Objects;
 
 import javax.crypto.BadPaddingException;
@@ -39,6 +45,8 @@ class ViewPagerAdapter extends PagerAdapter {
     LayoutInflater mLayoutInflater;
     SecretKey key;
     CryptoUtils cryptoUtils;
+    String sharedPrefsFile = "com.coldcoffee.imagevault";
+    SharedPreferences sharedPreferences;
 
 
     // Viewpager Constructor
@@ -48,6 +56,8 @@ class ViewPagerAdapter extends PagerAdapter {
         this.key = key;
         cryptoUtils = new CryptoUtils(context);
         mLayoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        sharedPreferences = context.getSharedPreferences(sharedPrefsFile, MODE_PRIVATE);
+
     }
 
     @Override
@@ -61,6 +71,7 @@ class ViewPagerAdapter extends PagerAdapter {
         return view.equals(object);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @NonNull
     @Override
     public Object instantiateItem(@NonNull ViewGroup container, final int position) {
@@ -72,7 +83,8 @@ class ViewPagerAdapter extends PagerAdapter {
 
         // setting the image in the imageView
         try {
-            imageView.setImageBitmap(cryptoUtils.getBitmapFromEncryptedImage(images.get(position), key));
+            IvParameterSpec iv = new IvParameterSpec(Base64.getDecoder().decode(sharedPreferences.getString(images.get(position),"null").getBytes()));
+            imageView.setImageBitmap(cryptoUtils.getBitmapFromEncryptedImage(images.get(position), key,iv));
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (InvalidAlgorithmParameterException e) {

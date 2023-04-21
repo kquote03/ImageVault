@@ -1,20 +1,31 @@
 package com.coldcoffee.imagevault;
 
+import android.content.ContentResolver;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.Build;
+import android.util.Log;
 
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.util.Base64;
 import java.util.Random;
 
 import javax.crypto.BadPaddingException;
@@ -36,6 +47,9 @@ public class CryptoUtils extends AppCompatActivity {
     //Transferring the Context from MainActivity
     //(or any other calling activity lmao, who gives a f!ck)
     Context context;
+    String sharedPrefsFile = "com.coldcoffee.imagevault";
+    SharedPreferences sharedPreferences;
+
     static final int IV_LENGTH = 16;
 
     /**
@@ -44,6 +58,7 @@ public class CryptoUtils extends AppCompatActivity {
      */
     public CryptoUtils(Context context){
         this.context = context;
+        sharedPreferences = context.getSharedPreferences(sharedPrefsFile, MODE_PRIVATE);
     }
 
     //Derives 256 bit key from a password
@@ -89,11 +104,12 @@ public class CryptoUtils extends AppCompatActivity {
      * @return throws an OpenSecrets object so the user is forced to deal with it.
      * @see OpenSecrets
      */
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public OpenSecrets encryptFile(String passphrase, String file){
         IvParameterSpec iv = generateIv();
         byte[] salt = generateSalt();
         try {
-            cipher(getKeyFromPassword(passphrase, salt), file, file, Cipher.ENCRYPT_MODE);
+            cipher(getKeyFromPassword(passphrase, salt), file, file, Cipher.ENCRYPT_MODE, null);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -107,10 +123,11 @@ public class CryptoUtils extends AppCompatActivity {
      * @param openSecrets Takes an OpenSecrets object to reuse the IV and salt so chaos does not ensue
      * @see OpenSecrets
      */
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public void decryptFile(String passphrase, String file, OpenSecrets openSecrets){
         byte[] salt = openSecrets.getSalt();
         try {
-            cipher(getKeyFromPassword(passphrase, salt), file, file, Cipher.DECRYPT_MODE);
+            cipher(getKeyFromPassword(passphrase, salt), file, file, Cipher.DECRYPT_MODE, openSecrets.iv);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -125,51 +142,37 @@ public class CryptoUtils extends AppCompatActivity {
      * @param cryptoMode Cipher.ENCRYPT_MODE or DECRYPT_MODE (1 or 2)
      * @throws Exception
      */
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public void cipher(SecretKey key,
-                        String inputFile, String outputFile, int cryptoMode) throws Exception {
-        String algorithm = "AES/CBC/PKCS5Padding";
-        try {
-            //Initialize the cipher
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            FileInputStream inputStream = context.openFileInput(inputFile);
-
-            int buffer;
-            int readCount = 0;
-            byte[] inputBytes = new byte[getFilestreamLen(inputFile)+IV_LENGTH];
-
-            IvParameterSpec iv;
-            //If encrypting, generate the IV and make the file begin with it.
-            if(cryptoMode == Cipher.ENCRYPT_MODE) {
-                iv = generateIv();
-                for(byte b : iv.getIV()){
-                    inputBytes[readCount++] = b;
-                }
-            }
-            else{
-                //Else read the IV from the beginning of the file
-                byte[] tempIv = new byte[IV_LENGTH];
-                while((buffer = inputStream.read()) != -1 && readCount <= 15){
-                    tempIv[readCount] = (byte) buffer;
-                }
-                iv = new IvParameterSpec(tempIv);
-            }
-
-
-            cipher.init(cryptoMode, key, iv);
-            //Initialize the input stream from an internal storage file
-            int bytesRead;
-            //Copies the entire file to the inputBytes byte array (used as a temporary location
-            //to store the data between inputStream and outputStream).
-            while ((buffer = inputStream.read()) != -1) {
-                inputBytes[readCount++] = (byte) buffer;
-            }
-            inputBytes = cipher.doFinal(inputBytes);
-            inputStream.close();
-
-            //Writes everything to the file.
+                       String inputFile, String outputFile, int cryptoMode, @Nullable IvParameterSpec iv) throws Exception {
+        try{
+            EncryptedPair data = cryptStream(context.openFileInput(inputFile), key, cryptoMode, iv);
             FileOutputStream outputStream = context.openFileOutput(outputFile, context.MODE_PRIVATE);
-            outputStream.write(inputBytes);
+            outputStream.write(data.data);
             outputStream.close();
+            SharedPreferences.Editor spEditor = sharedPreferences.edit();
+            spEditor.putString(outputFile, Base64.getEncoder().encodeToString(data.iv.getIV()));
+            spEditor.apply();
+        }
+        catch (IOException | NoSuchPaddingException |
+               NoSuchAlgorithmException| InvalidAlgorithmParameterException| InvalidKeyException|
+               BadPaddingException| IllegalBlockSizeException e){
+            throw new Exception("Failed to "+(cryptoMode==Cipher.ENCRYPT_MODE?"encrypt":"decrypt")+" message "+ e.getMessage());
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public void cipher(SecretKey key,
+                       Uri inputFile, String outputFile, int cryptoMode, @Nullable IvParameterSpec iv) throws Exception {
+        try{
+            ContentResolver cr = context.getContentResolver();
+            EncryptedPair data = cryptStream( (FileInputStream) cr.openInputStream(inputFile), key, cryptoMode, iv);
+            FileOutputStream outputStream = context.openFileOutput(outputFile, context.MODE_PRIVATE);
+            outputStream.write(data.data);
+            outputStream.close();
+            SharedPreferences.Editor spEditor = sharedPreferences.edit();
+            spEditor.putString(outputFile, Base64.getEncoder().encodeToString(data.iv.getIV()));
+            spEditor.apply();
 
         }
         catch (IOException | NoSuchPaddingException |
@@ -179,43 +182,25 @@ public class CryptoUtils extends AppCompatActivity {
         }
     }
 
-    public byte[] cryptStream(FileInputStream stream, SecretKey key, int cryptoMode) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException {
+    public EncryptedPair cryptStream(FileInputStream stream, SecretKey key, int cryptoMode, @Nullable IvParameterSpec iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException {
         //Initialize the cipher
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-
-        int buffer;
-        int readCount = 0;
-        byte[] inputBytes = new byte[getFilestreamLen(stream)+IV_LENGTH];
-
-        IvParameterSpec iv;
-        //If encrypting, generate the IV and make the file begin with it.
-        if(cryptoMode == Cipher.ENCRYPT_MODE) {
+        if(cryptoMode == Cipher.ENCRYPT_MODE)
             iv = generateIv();
-            for(byte b : iv.getIV()){
-                inputBytes[readCount++] = b;
-            }
-        }
-        else{
-            //Else read the IV from the beginning of the file
-            byte[] tempIv = new byte[IV_LENGTH];
-            while((buffer = stream.read()) != -1 && readCount <= 15){
-                tempIv[readCount] = (byte) buffer;
-            }
-            iv = new IvParameterSpec(tempIv);
-        }
-
-
         cipher.init(cryptoMode, key, iv);
         //Initialize the input stream from an internal storage file
+        int buffer;
+        int count = 0;
+        byte[] inputBytes = new byte[getFilestreamLen(stream)];
         int bytesRead;
         //Copies the entire file to the inputBytes byte array (used as a temporary location
         //to store the data between inputStream and outputStream).
         while ((buffer = stream.read()) != -1) {
-            inputBytes[readCount++] = (byte) buffer;
+            inputBytes[count++] = (byte) buffer;
         }
         inputBytes = cipher.doFinal(inputBytes);
         stream.close();
-        return inputBytes;
+        return new EncryptedPair(inputBytes, iv);
 
     }
 
@@ -242,18 +227,18 @@ public class CryptoUtils extends AppCompatActivity {
         return count;
     }
     private int getFilestreamLen(FileInputStream i) throws IOException {
-        int count = 0;
-        while (i.read() != -1) {
-            count++;
-        }
-        i.reset();
-        return count;
+        return (int) i.getChannel().size();
+    }
+    private int getFilestreamLen(Uri i) throws IOException {
+        AssetFileDescriptor fileDescriptor = context.getContentResolver().openAssetFileDescriptor(i , "r");
+        int fileSize = (int) fileDescriptor.getLength(); //hopefully kheir
+        return fileSize;
     }
 
-    public Bitmap getBitmapFromEncryptedImage(String filename, SecretKey key) throws IOException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+    public Bitmap getBitmapFromEncryptedImage(String filename, SecretKey key, IvParameterSpec iv) throws IOException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         CryptoUtils cryptoUtils = new CryptoUtils(context);
-        byte[] decryptedData = cryptoUtils.cryptStream(context.openFileInput(filename), key, Cipher.DECRYPT_MODE);
-        return BitmapFactory.decodeByteArray(decryptedData, 0, decryptedData.length);
+        EncryptedPair decryptedData = cryptoUtils.cryptStream(context.openFileInput(filename), key, Cipher.DECRYPT_MODE, iv);
+        return BitmapFactory.decodeByteArray(decryptedData.data, 0, decryptedData.data.length);
     }
 
 }

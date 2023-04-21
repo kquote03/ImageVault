@@ -2,14 +2,21 @@ package com.coldcoffee.imagevault;
 
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.ContentResolver;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.appcompat.widget.Toolbar;
@@ -19,20 +26,28 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Base64;
 
+import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 public class GridViewActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE = 200;
+    private static final int PICKFILE_RESULT_CODE = 8778;
     private ArrayList<String> imagePaths;
     private RecyclerView imagesRV;
     private RecyclerViewAdapter imageRVAdapter;
     ViewPager viewPager;
     SecretKey key;
+    Intent fileIntent;
+    CryptoUtils cryptoUtils;
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -40,9 +55,15 @@ public class GridViewActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.recycler_view);
         Toolbar myToolbar = (Toolbar) findViewById(R.id.add_toolbar);
-        setSupportActionBar(myToolbar);
+        //setSupportActionBar(myToolbar);
+
+
+        fileIntent = new Intent(Intent.ACTION_GET_CONTENT);
+        fileIntent.addCategory(Intent.CATEGORY_OPENABLE);
+        fileIntent.setType("image/*");
 
         key = new SecretKeySpec(Base64.getDecoder().decode(getIntent().getStringExtra("key")), "AES");
+        cryptoUtils = new CryptoUtils(getApplicationContext());
 
         viewPager = (ViewPager)findViewById(R.id.viewPagerMain);
         imagePaths = new ArrayList<>();
@@ -97,7 +118,6 @@ public class GridViewActivity extends AppCompatActivity {
 
     private void getImagePath() {
         for (final File fileEntry : getFilesDir().listFiles()) {
-            //if(fileEntry.getName() != "cache" || fileEntry.getName() != "files")
                 imagePaths.add(fileEntry.getName());
         }
         imageRVAdapter.notifyDataSetChanged();
@@ -125,6 +145,23 @@ public class GridViewActivity extends AppCompatActivity {
                     }
                 }
                 break;
+        }
+    }
+
+    public void bringUpImagePicker(View view) {
+        fileIntent = Intent.createChooser(fileIntent,"Import Image");
+        startActivityForResult(fileIntent, PICKFILE_RESULT_CODE);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Uri uri = data.getData();
+        try {
+            cryptoUtils.cipher(key, uri, new File(uri.getPath()).getName(), Cipher.ENCRYPT_MODE, null);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }

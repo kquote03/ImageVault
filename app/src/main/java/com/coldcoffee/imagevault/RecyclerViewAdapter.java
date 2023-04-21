@@ -1,9 +1,13 @@
 package com.coldcoffee.imagevault;
 
+import static android.content.Context.MODE_PRIVATE;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +15,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.squareup.picasso.Picasso;
@@ -21,11 +26,13 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Base64;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.RecyclerViewHolder> {
@@ -37,6 +44,8 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 	private final ArrayList<String> imagePathArrayList;
 	private SecretKey key;
 	CryptoUtils cryptoUtils;
+	String sharedPrefsFile = "com.coldcoffee.imagevault";
+	SharedPreferences sharedPreferences;
 
 	// on below line we have created a constructor.
 	public RecyclerViewAdapter(Context context, ArrayList<String> imagePathArrayList, SecretKey key) {
@@ -44,10 +53,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 		this.imagePathArrayList = imagePathArrayList;
 		this.key = key;
 		cryptoUtils = new CryptoUtils(context);
-
-		intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-		intent.addCategory(Intent.CATEGORY_OPENABLE);
-		intent.setType("image/*");
+		sharedPreferences = context.getSharedPreferences(sharedPrefsFile, MODE_PRIVATE);
 
 	}
 
@@ -59,6 +65,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 		return new RecyclerViewHolder(view);
 	}
 
+	@RequiresApi(api = Build.VERSION_CODES.O)
 	@Override
 	public void onBindViewHolder(@NonNull RecyclerViewHolder holder, @SuppressLint("RecyclerView") int position) {
 
@@ -69,7 +76,8 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 		// on below line we are checking if the file exists or not.
 		if (imgFile.exists() || true) { //TODO actual verification
 			try {
-				Bitmap image = cryptoUtils.getBitmapFromEncryptedImage(imagePathArrayList.get(position), key);
+				IvParameterSpec iv = new IvParameterSpec(Base64.getDecoder().decode(sharedPreferences.getString(imagePathArrayList.get(position),"null").getBytes()));
+				Bitmap image = cryptoUtils.getBitmapFromEncryptedImage(imagePathArrayList.get(position), key, iv);
 				String path = MediaStore.Images.Media.insertImage(context.getContentResolver(), image, "Title", null);
 				Picasso.get().load(path).placeholder(R.drawable.ic_launcher_background).into(holder.imageIV);
 
