@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Base64;
 
@@ -83,7 +84,7 @@ public class GridViewActivity extends AppCompatActivity {
 
         // in this method we are preparing our recycler view.
         // on below line we are initializing our adapter class.
-        imageRVAdapter = new RecyclerViewAdapter(getApplicationContext(), imagePaths);
+        imageRVAdapter = new RecyclerViewAdapter(getApplicationContext(), imagePaths, key);
 
         // on below line we are creating a new grid layout manager.
         GridLayoutManager manager = new GridLayoutManager(getApplicationContext(), 4);
@@ -95,48 +96,13 @@ public class GridViewActivity extends AppCompatActivity {
     }
 
     private void getImagePath() {
-        // in this method we are adding all our image paths
-        // in our arraylist which we have created.
-        // on below line we are checking if the device is having an sd card or not.
-        boolean isSDPresent = android.os.Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED);
-
-        if (isSDPresent) {
-
-            // if the sd card is present we are creating a new list in
-            // which we are getting our images data with their ids.
-            final String[] columns = {MediaStore.Images.Media.DATA, MediaStore.Images.Media._ID};
-
-            // on below line we are creating a new
-            // string to order our images by string.
-            final String orderBy = MediaStore.Images.Media._ID;
-
-            // this method will stores all the images
-            // from the gallery in Cursor
-            Cursor cursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, columns, null, null, orderBy);
-
-            // below line is to get total number of images
-            int count = cursor.getCount();
-
-            // on below line we are running a loop to add
-            // the image file path in our array list.
-            for (int i = 0; i < count; i++) {
-
-                // on below line we are moving our cursor position
-                cursor.moveToPosition(i);
-
-                // on below line we are getting image file path
-                int dataColumnIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
-
-                // after that we are getting the image file path
-                // and adding that path in our array list.
-                imagePaths.add(cursor.getString(dataColumnIndex));
-            }
-            imageRVAdapter.notifyDataSetChanged();
-            // after adding the data to our
-            // array list we are closing our cursor.
-            cursor.close();
+        for (final File fileEntry : getFilesDir().listFiles()) {
+            //if(fileEntry.getName() != "cache" || fileEntry.getName() != "files")
+                imagePaths.add(fileEntry.getName());
         }
+        imageRVAdapter.notifyDataSetChanged();
     }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {

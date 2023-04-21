@@ -3,6 +3,8 @@ package com.coldcoffee.imagevault;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,8 +16,16 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.squareup.picasso.Picasso;
 
 import java.io.File;
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
 
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.RecyclerViewHolder> {
@@ -25,11 +35,15 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 	// creating a variable for our context and array list.
 	private final Context context;
 	private final ArrayList<String> imagePathArrayList;
+	private SecretKey key;
+	CryptoUtils cryptoUtils;
 
 	// on below line we have created a constructor.
-	public RecyclerViewAdapter(Context context, ArrayList<String> imagePathArrayList) {
+	public RecyclerViewAdapter(Context context, ArrayList<String> imagePathArrayList, SecretKey key) {
 		this.context = context;
 		this.imagePathArrayList = imagePathArrayList;
+		this.key = key;
+		cryptoUtils = new CryptoUtils(context);
 
 		intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
 		intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -53,10 +67,29 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 		File imgFile = new File(imagePathArrayList.get(position));
 
 		// on below line we are checking if the file exists or not.
-		if (imgFile.exists()) {
+		if (imgFile.exists() || true) { //TODO actual verification
+			try {
+				Bitmap image = cryptoUtils.getBitmapFromEncryptedImage(imagePathArrayList.get(position), key);
+				String path = MediaStore.Images.Media.insertImage(context.getContentResolver(), image, "Title", null);
+				Picasso.get().load(path).placeholder(R.drawable.ic_launcher_background).into(holder.imageIV);
+
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			} catch (InvalidAlgorithmParameterException e) {
+				throw new RuntimeException(e);
+			} catch (NoSuchPaddingException e) {
+				throw new RuntimeException(e);
+			} catch (IllegalBlockSizeException e) {
+				throw new RuntimeException(e);
+			} catch (NoSuchAlgorithmException e) {
+				throw new RuntimeException(e);
+			} catch (BadPaddingException e) {
+				throw new RuntimeException(e);
+			} catch (InvalidKeyException e) {
+				throw new RuntimeException(e);
+			}
 
 			// if the file exists then we are displaying that file in our image view using picasso library.
-			Picasso.get().load(imgFile).placeholder(R.drawable.ic_launcher_background).into(holder.imageIV);
 
 			// on below line we are adding click listener to our item of recycler view.
 			holder.itemView.setOnClickListener(new View.OnClickListener() {
