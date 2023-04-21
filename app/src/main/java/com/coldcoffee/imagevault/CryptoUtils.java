@@ -9,11 +9,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Random;
@@ -60,32 +57,6 @@ public class CryptoUtils extends AppCompatActivity {
         }
     }
 
-    /**
-     * Stores a key in the Android Keystore where each key
-     * corresponds to a username.
-     * @param username The username taken from the UI
-     * @param key The key to store of type SecretKey
-     * @throws KeyStoreException
-     * @throws CertificateException
-     * @throws IOException
-     * @throws NoSuchAlgorithmException
-     */
-    public void storeSecretKey(String username, SecretKey key) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
-        KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
-        keyStore.load(null);
-        KeyStore.SecretKeyEntry secretKeyEntry = new KeyStore.SecretKeyEntry(key);
-        keyStore.setEntry(username, secretKeyEntry, null);
-    }
-
-    public SecretKey getSecretKey(String username, String passphrase, OpenSecrets openSecrets) throws Exception {
-        SecretKey generatedKey = getKeyFromPassword(passphrase, openSecrets.getSalt());
-        KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
-        keyStore.load(null);
-        KeyStore.SecretKeyEntry secretKeyEntry = (KeyStore.SecretKeyEntry) keyStore.getEntry("AndroidKeyStore", null);
-        if (generatedKey.equals(secretKeyEntry.getSecretKey()))
-            return secretKeyEntry.getSecretKey();
-        else throw new KeyStoreException();
-    }
 
     /**
      * Generates the Initialization Vector
