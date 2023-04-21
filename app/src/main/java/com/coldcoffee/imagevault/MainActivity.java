@@ -46,16 +46,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
-
         username = findViewById(R.id.username);
         password = findViewById(R.id.password);
         loginButton = findViewById(R.id.loginButton);
         signup = findViewById(R.id.signupText);
         cryptoUtils = new CryptoUtils(getApplicationContext());
         sharedPreferences = getSharedPreferences(sharedPrefsFile, MODE_PRIVATE);
-
-
 
         loginButton.setOnClickListener(new View.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.O)
@@ -68,8 +64,7 @@ public class MainActivity extends AppCompatActivity {
                             .getString("salt",""));
                     IvParameterSpec iv = new IvParameterSpec(Base64
                             .getDecoder()
-                            .decode(sharedPreferences
-                                    .getString("iv","")));
+                            .decode(sharedPreferences.getString("iv","")));
 
                     secretKey = cryptoUtils.getKeyFromPassword(password.getText().toString(), salt);
 
