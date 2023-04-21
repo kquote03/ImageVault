@@ -34,6 +34,7 @@ public class CryptoUtils extends AppCompatActivity {
     //Transferring the Context from MainActivity
     //(or any other calling activity lmao, who gives a f!ck)
     Context context;
+    static final int IV_LENGTH = 16;
 
     /**
      * Contructor, the class cannot be static due to Android f!ckery
@@ -63,7 +64,7 @@ public class CryptoUtils extends AppCompatActivity {
      * @return returns an IvParemeterSpec object (the IV)
      */
     public static IvParameterSpec generateIv() {
-        byte[] iv = new byte[16];
+        byte[] iv = new byte[IV_LENGTH];
         new SecureRandom().nextBytes(iv);
         return new IvParameterSpec(iv);
     }
@@ -86,11 +87,11 @@ public class CryptoUtils extends AppCompatActivity {
      * @return throws an OpenSecrets object so the user is forced to deal with it.
      * @see OpenSecrets
      */
-    public OpenSecrets encrypt(String passphrase, String file){
+    public OpenSecrets encryptFile(String passphrase, String file){
         IvParameterSpec iv = generateIv();
         byte[] salt = generateSalt();
         try {
-            cipher(getKeyFromPassword(passphrase, salt), file, file, iv, Cipher.ENCRYPT_MODE);
+            cipher(getKeyFromPassword(passphrase, salt), file, file, Cipher.ENCRYPT_MODE);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -104,11 +105,10 @@ public class CryptoUtils extends AppCompatActivity {
      * @param openSecrets Takes an OpenSecrets object to reuse the IV and salt so chaos does not ensue
      * @see OpenSecrets
      */
-    public void decrypt(String passphrase, String file, OpenSecrets openSecrets){
-        IvParameterSpec iv = openSecrets.getIv();
+    public void decryptFile(String passphrase, String file, OpenSecrets openSecrets){
         byte[] salt = openSecrets.getSalt();
         try {
-            cipher(getKeyFromPassword(passphrase, salt), file, file, iv, Cipher.DECRYPT_MODE);
+            cipher(getKeyFromPassword(passphrase, salt), file, file, Cipher.DECRYPT_MODE);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -120,27 +120,46 @@ public class CryptoUtils extends AppCompatActivity {
      * @param key SecretKey, generated from the passphrase and salt
      * @param inputFile input file name
      * @param outputFile output file name
-     * @param iv initializtion vector (IvParameterSpec)
-     * @param cipherMode Cipher.ENCRYPT_MODE or DECRYPT_MODE (1 or 2)
+     * @param cryptoMode Cipher.ENCRYPT_MODE or DECRYPT_MODE (1 or 2)
      * @throws Exception
      */
     public void cipher(SecretKey key,
-                        String inputFile, String outputFile, IvParameterSpec iv, int cipherMode) throws Exception {
+                        String inputFile, String outputFile, int cryptoMode) throws Exception {
         String algorithm = "AES/CBC/PKCS5Padding";
         try {
             //Initialize the cipher
-            Cipher cipher = Cipher.getInstance(algorithm);
-            cipher.init(cipherMode, key, iv);
-            //Initialize the input stream from an internal storage file
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             FileInputStream inputStream = context.openFileInput(inputFile);
+
             int buffer;
-            int count = 0;
-            byte[] inputBytes = new byte[getFilestreamLen(inputFile)];
+            int readCount = 0;
+            byte[] inputBytes = new byte[getFilestreamLen(inputFile)+IV_LENGTH];
+
+            IvParameterSpec iv;
+            //If encrypting, generate the IV and make the file begin with it.
+            if(cryptoMode == Cipher.ENCRYPT_MODE) {
+                iv = generateIv();
+                for(byte b : iv.getIV()){
+                    inputBytes[readCount++] = b;
+                }
+            }
+            else{
+                //Else read the IV from the beginning of the file
+                byte[] tempIv = new byte[IV_LENGTH];
+                while((buffer = inputStream.read()) != -1 && readCount <= 15){
+                    tempIv[readCount] = (byte) buffer;
+                }
+                iv = new IvParameterSpec(tempIv);
+            }
+
+
+            cipher.init(cryptoMode, key, iv);
+            //Initialize the input stream from an internal storage file
             int bytesRead;
             //Copies the entire file to the inputBytes byte array (used as a temporary location
             //to store the data between inputStream and outputStream).
             while ((buffer = inputStream.read()) != -1) {
-                inputBytes[count++] = (byte)buffer;
+                inputBytes[readCount++] = (byte) buffer;
             }
             inputBytes = cipher.doFinal(inputBytes);
             inputStream.close();
@@ -154,8 +173,48 @@ public class CryptoUtils extends AppCompatActivity {
         catch (IOException | NoSuchPaddingException |
                NoSuchAlgorithmException| InvalidAlgorithmParameterException| InvalidKeyException|
                BadPaddingException| IllegalBlockSizeException e){
-            throw new Exception("Failed to "+(cipherMode==Cipher.ENCRYPT_MODE?"encrypt":"decrypt")+" message "+ e.getMessage());
+            throw new Exception("Failed to "+(cryptoMode==Cipher.ENCRYPT_MODE?"encrypt":"decrypt")+" message "+ e.getMessage());
         }
+    }
+
+    public byte[] cryptStream(FileInputStream stream, SecretKey key, int cryptoMode) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException {
+        //Initialize the cipher
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+
+        int buffer;
+        int readCount = 0;
+        byte[] inputBytes = new byte[getFilestreamLen(stream)+IV_LENGTH];
+
+        IvParameterSpec iv;
+        //If encrypting, generate the IV and make the file begin with it.
+        if(cryptoMode == Cipher.ENCRYPT_MODE) {
+            iv = generateIv();
+            for(byte b : iv.getIV()){
+                inputBytes[readCount++] = b;
+            }
+        }
+        else{
+            //Else read the IV from the beginning of the file
+            byte[] tempIv = new byte[IV_LENGTH];
+            while((buffer = stream.read()) != -1 && readCount <= 15){
+                tempIv[readCount] = (byte) buffer;
+            }
+            iv = new IvParameterSpec(tempIv);
+        }
+
+
+        cipher.init(cryptoMode, key, iv);
+        //Initialize the input stream from an internal storage file
+        int bytesRead;
+        //Copies the entire file to the inputBytes byte array (used as a temporary location
+        //to store the data between inputStream and outputStream).
+        while ((buffer = stream.read()) != -1) {
+            inputBytes[readCount++] = (byte) buffer;
+        }
+        inputBytes = cipher.doFinal(inputBytes);
+        stream.close();
+        return inputBytes;
+
     }
 
     //Just a method I used to print the file for debugging this insanity.
@@ -180,4 +239,13 @@ public class CryptoUtils extends AppCompatActivity {
         }
         return count;
     }
+    private int getFilestreamLen(FileInputStream i) throws IOException {
+        int count = 0;
+        while (i.read() != -1) {
+            count++;
+        }
+        i.reset();
+        return count;
+    }
+
 }
