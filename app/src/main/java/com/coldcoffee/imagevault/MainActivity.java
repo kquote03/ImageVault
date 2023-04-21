@@ -58,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 try {
+                    //I know we're not using rust-style unwrapping but it looked cool so i used it 3_3
                     byte[] salt = Base64
                             .getDecoder()
                             .decode(sharedPreferences
@@ -68,6 +69,11 @@ public class MainActivity extends AppCompatActivity {
 
                     secretKey = cryptoUtils.getKeyFromPassword(password.getText().toString(), salt);
 
+                    Intent loggedIn = new Intent(getApplicationContext(), GridViewActivity.class);
+                    loggedIn.putExtra(Base64
+                            .getEncoder()                          //they shouldnt allow me near a phone
+                            .encodeToString(secretKey.getEncoded()), "null");
+                    startActivity(loggedIn);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
