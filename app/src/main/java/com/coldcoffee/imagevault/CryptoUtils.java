@@ -1,6 +1,8 @@
 package com.coldcoffee.imagevault;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -246,6 +248,12 @@ public class CryptoUtils extends AppCompatActivity {
         }
         i.reset();
         return count;
+    }
+
+    public Bitmap getBitmapFromEncryptedImage(String filename, SecretKey key) throws IOException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+        CryptoUtils cryptoUtils = new CryptoUtils(context);
+        byte[] decryptedData = cryptoUtils.cryptStream(context.openFileInput(filename), key, Cipher.DECRYPT_MODE);
+        return BitmapFactory.decodeByteArray(decryptedData, 0, decryptedData.length);
     }
 
 }

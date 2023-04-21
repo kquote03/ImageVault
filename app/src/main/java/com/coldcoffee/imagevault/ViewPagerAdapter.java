@@ -1,6 +1,8 @@
 package com.coldcoffee.imagevault;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,7 +12,20 @@ import android.widget.LinearLayout;
 import androidx.annotation.NonNull;
 import androidx.viewpager.widget.PagerAdapter;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Objects;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 
 class ViewPagerAdapter extends PagerAdapter {
 
@@ -18,23 +33,27 @@ class ViewPagerAdapter extends PagerAdapter {
     Context context;
 
     // Array of images
-    int[] images;
+    ArrayList<String> images;
 
     // Layout Inflater
     LayoutInflater mLayoutInflater;
+    SecretKey key;
+    CryptoUtils cryptoUtils;
 
 
     // Viewpager Constructor
-    public ViewPagerAdapter(Context context, int[] images) {
+    public ViewPagerAdapter(Context context, ArrayList<String> images, SecretKey key) {
         this.context = context;
         this.images = images;
+        this.key = key;
+        cryptoUtils = new CryptoUtils(context);
         mLayoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
 
     @Override
     public int getCount() {
         // return the number of images
-        return images.length;
+        return images.size();
     }
 
     @Override
@@ -52,7 +71,23 @@ class ViewPagerAdapter extends PagerAdapter {
         ImageView imageView = (ImageView) itemView.findViewById(R.id.idIVImage);
 
         // setting the image in the imageView
-        imageView.setImageResource(images[position]);
+        try {
+            imageView.setImageBitmap(cryptoUtils.getBitmapFromEncryptedImage(images.get(position), key));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchPaddingException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalBlockSizeException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (BadPaddingException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e);
+        }
 
         // Adding the View
         Objects.requireNonNull(container).addView(itemView);
@@ -64,4 +99,6 @@ class ViewPagerAdapter extends PagerAdapter {
     public void destroyItem(ViewGroup container, int position, Object object) {
         container.removeView((LinearLayout) object);
     }
+
+
 }
