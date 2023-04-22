@@ -8,6 +8,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -99,6 +101,35 @@ class ViewPagerAdapter extends PagerAdapter {
         } catch (InvalidKeyException e) {
             throw new RuntimeException(e);
         }
+        imageView.setOnTouchListener(new View.OnTouchListener() {
+            private float mScaleFactor = 1.0f;
+            ScaleGestureDetector scaleGestureDetector = new ScaleGestureDetector(context.getApplicationContext(), new ScaleListener());
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                scaleGestureDetector.onTouchEvent(event);
+                return true;
+            }
+            class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+                // on below line we are creating a class for our scale
+                // listener and  extending it with gesture listener.
+                @Override
+                public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
+
+                    // inside on scale method we are setting scale
+                    // for our image in our image view.
+                    mScaleFactor *= scaleGestureDetector.getScaleFactor();
+                    mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, 10.0f));
+
+                    // on below line we are setting
+                    // scale x and scale y to our image view.
+                    imageView.setScaleX(mScaleFactor);
+                    imageView.setScaleY(mScaleFactor);
+                    return true;
+                }
+            }
+
+        });
 
         // Adding the View
         Objects.requireNonNull(container).addView(itemView);
