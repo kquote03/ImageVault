@@ -48,7 +48,6 @@ public class GridViewActivity extends AppCompatActivity {
     SecretKey key;
     Intent fileIntent;
     CryptoUtils cryptoUtils;
-    ViewPagerAdapter mViewPagerAdapter;
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -58,14 +57,15 @@ public class GridViewActivity extends AppCompatActivity {
         Toolbar myToolbar = (Toolbar) findViewById(R.id.add_toolbar);
         //setSupportActionBar(myToolbar);
 
+        //The file-picker intent
         fileIntent = new Intent(Intent.ACTION_GET_CONTENT);
         fileIntent.addCategory(Intent.CATEGORY_OPENABLE);
+        //Filter by images only using MIME types, the * is just a wildcard here to say "any image type, I'm not racist"
         fileIntent.setType("image/*");
 
         key = new SecretKeySpec(Base64.getDecoder().decode(getIntent().getStringExtra("key")), "AES");
         cryptoUtils = new CryptoUtils(getApplicationContext());
 
-        //viewPager = (ViewPager)findViewById(R.id.viewPagerMain);
         imagePaths = new ArrayList<>();
         imagesRV = findViewById(R.id.idRVImages);
 

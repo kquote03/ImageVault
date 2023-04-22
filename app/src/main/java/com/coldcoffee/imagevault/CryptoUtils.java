@@ -182,6 +182,15 @@ public class CryptoUtils extends AppCompatActivity {
         }
     }
 
+    /**
+     * Encrypts/Decrypts a given FileInputStream and returns an EncryptedPair
+     * @param stream The FileInputStream
+     * @param key The SecretKey
+     * @param cryptoMode Cipher.ENCRYPT_MODE or Cipher.DECRYPT_MODE, sets the operation
+     * @param iv The IV, only needed when decrypting, use null when encrypting to randomly generate an IV
+     * @return returns an EcnryptedPair
+     * @see EncryptedPair
+     */
     public EncryptedPair cryptStream(FileInputStream stream, SecretKey key, int cryptoMode, @Nullable IvParameterSpec iv) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException {
         //Initialize the cipher
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
@@ -235,6 +244,15 @@ public class CryptoUtils extends AppCompatActivity {
         return fileSize;
     }
 
+    /**
+     * Decrypts an image file
+     * @param filename The name of the image in internal storage
+     * @param key The SecretKey
+     * @param iv The IV of the encrypted file
+     * @return Decrypted image
+     * @see SecretKey
+     * @see EncryptedPair
+     */
     public Bitmap getBitmapFromEncryptedImage(String filename, SecretKey key, IvParameterSpec iv) throws IOException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         CryptoUtils cryptoUtils = new CryptoUtils(context);
         EncryptedPair decryptedData = cryptoUtils.cryptStream(context.openFileInput(filename), key, Cipher.DECRYPT_MODE, iv);

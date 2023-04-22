@@ -80,7 +80,9 @@ class ViewPagerAdapter extends PagerAdapter {
 
         // setting the image in the imageView
         try {
+            //Gets the IV
             IvParameterSpec iv = new IvParameterSpec(Base64.getDecoder().decode(sharedPreferences.getString(images.get(position),"null").getBytes()));
+            //Sets the imageView to the decrypted bitmap
             imageView.setImageBitmap(cryptoUtils.getBitmapFromEncryptedImage(images.get(position), key,iv));
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -97,6 +99,11 @@ class ViewPagerAdapter extends PagerAdapter {
         } catch (InvalidKeyException e) {
             throw new RuntimeException(e);
         }
+
+        /**
+         * Attaches a TouchListener to each image, this is used for 2-finger pinch zoom
+         * This was adapted from ImageDetailActivity from the GeeksForGeeks gallerytest
+         */
         imageView.setOnTouchListener(new View.OnTouchListener() {
             private float mScaleFactor = 1.0f;
             ScaleGestureDetector scaleGestureDetector = new ScaleGestureDetector(context.getApplicationContext(), new ScaleListener());

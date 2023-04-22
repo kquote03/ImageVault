@@ -53,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
         cryptoUtils = new CryptoUtils(getApplicationContext());
         sharedPreferences = getSharedPreferences(sharedPrefsFile, MODE_PRIVATE);
 
+        //TODO check user entry.
         loginButton.setOnClickListener(new View.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override

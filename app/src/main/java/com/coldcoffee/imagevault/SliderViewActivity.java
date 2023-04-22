@@ -28,13 +28,16 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+/**
+ * The same as GridViewActivity but adapted to receive the key
+ * And more importantly, starts a ViewPagerAdapter, dubbed "slider" in internal communications
+ * Because it allows us to slide from one image to another or some shit idfk
+ */
 public class SliderViewActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE = 200;
-    private static final int PICKFILE_RESULT_CODE = 8778;
     private ArrayList<String> imagePaths;
     ViewPager viewPager;
     SecretKey key;
-    Intent fileIntent;
     CryptoUtils cryptoUtils;
     ViewPagerAdapter mViewPagerAdapter;
 
@@ -115,20 +118,4 @@ public class SliderViewActivity extends AppCompatActivity {
         }
     }
 
-    public void bringUpImagePicker(View view) {
-        fileIntent = Intent.createChooser(fileIntent,"Import Image");
-        startActivityForResult(fileIntent, PICKFILE_RESULT_CODE);
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        Uri uri = data.getData();
-        try {
-            cryptoUtils.cipher(key, uri, new File(uri.getPath()).getName(), Cipher.ENCRYPT_MODE, null);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 }
