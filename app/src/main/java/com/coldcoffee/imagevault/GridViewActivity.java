@@ -48,6 +48,7 @@ public class GridViewActivity extends AppCompatActivity {
     SecretKey key;
     Intent fileIntent;
     CryptoUtils cryptoUtils;
+    ViewPagerAdapter mViewPagerAdapter;
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -65,13 +66,23 @@ public class GridViewActivity extends AppCompatActivity {
         key = new SecretKeySpec(Base64.getDecoder().decode(getIntent().getStringExtra("key")), "AES");
         cryptoUtils = new CryptoUtils(getApplicationContext());
 
-        viewPager = (ViewPager)findViewById(R.id.viewPagerMain);
+        //viewPager = (ViewPager)findViewById(R.id.viewPagerMain);
         imagePaths = new ArrayList<>();
         imagesRV = findViewById(R.id.idRVImages);
+
+        viewPager = (ViewPager)findViewById(R.id.viewPagerMain);
+
+        // Initializing the ViewPagerAdapter
+        mViewPagerAdapter = new ViewPagerAdapter(GridViewActivity.this, imagePaths, key);
+
+        // Adding the Adapter to the ViewPager
+
 
 
         requestPermissions();
         prepareRecyclerView();
+        viewPager.setAdapter(mViewPagerAdapter);
+
     }
 
     private boolean checkPermission() {
@@ -103,6 +114,7 @@ public class GridViewActivity extends AppCompatActivity {
 
     private void prepareRecyclerView() {
 
+
         // in this method we are preparing our recycler view.
         // on below line we are initializing our adapter class.
         imageRVAdapter = new RecyclerViewAdapter(getApplicationContext(), imagePaths, key);
@@ -115,6 +127,7 @@ public class GridViewActivity extends AppCompatActivity {
         imagesRV.setLayoutManager(manager);
         imagesRV.setAdapter(imageRVAdapter);
     }
+
 
     private void getImagePath() {
         for (final File fileEntry : getFilesDir().listFiles()) {

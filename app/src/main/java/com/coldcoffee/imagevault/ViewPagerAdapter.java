@@ -57,7 +57,6 @@ class ViewPagerAdapter extends PagerAdapter {
         cryptoUtils = new CryptoUtils(context);
         mLayoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         sharedPreferences = context.getSharedPreferences(sharedPrefsFile, MODE_PRIVATE);
-
     }
 
     @Override

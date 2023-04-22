@@ -105,7 +105,8 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 				public void onClick(View v) {
 
 					// inside on click listener we are creating a new intent
-					Intent i = new Intent(context, ImageDetailActivity.class);
+					Intent i = new Intent(context, ViewPagerAdapter.class);
+					i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
 					// on below line we are passing the image path to our new activity.
 					i.putExtra("imgPath", imagePathArrayList.get(position));
