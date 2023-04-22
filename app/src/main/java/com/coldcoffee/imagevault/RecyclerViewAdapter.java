@@ -78,8 +78,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 			try {
 				IvParameterSpec iv = new IvParameterSpec(Base64.getDecoder().decode(sharedPreferences.getString(imagePathArrayList.get(position),"null").getBytes()));
 				Bitmap image = cryptoUtils.getBitmapFromEncryptedImage(imagePathArrayList.get(position), key, iv);
-				String path = MediaStore.Images.Media.insertImage(context.getContentResolver(), image, "Title", null);
-				Picasso.get().load(path).placeholder(R.drawable.ic_launcher_background).into(holder.imageIV);
+				holder.imageIV.setImageBitmap(image);
 
 			} catch (IOException e) {
 				throw new RuntimeException(e);
@@ -105,7 +104,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 				public void onClick(View v) {
 
 					// inside on click listener we are creating a new intent
-					Intent i = new Intent(context, ViewPagerAdapter.class);
+					Intent i = new Intent(context, SliderViewActivity.class);
 					i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
 					// on below line we are passing the image path to our new activity.

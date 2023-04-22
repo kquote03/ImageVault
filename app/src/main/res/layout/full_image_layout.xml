@@ -6,16 +6,21 @@
     android:layout_height="wrap_content"
     android:layout_gravity="center"
     android:layout_margin="3dp"
-    android:elevation="8dp"
-    app:cardCornerRadius="8dp">
+    android:elevation="8dp">
 
     <!--Image view for displaying the image
         in our card layout in recycler view-->
-    <ImageView
-        android:id="@+id/idIVImage"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_gravity="center"
-        android:scaleType="centerCrop" />
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+
+        <ImageView
+            android:id="@+id/idIVImage"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_gravity="center"
+            android:scaleType="fitCenter" />
+    </RelativeLayout>
 
 </androidx.cardview.widget.CardView>

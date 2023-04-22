@@ -2,23 +2,17 @@ package com.coldcoffee.imagevault;
 
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
 
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.AssetFileDescriptor;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.MediaStore;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -26,11 +20,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Base64;
 
@@ -38,12 +28,10 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-public class GridViewActivity extends AppCompatActivity {
+public class SliderViewActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE = 200;
     private static final int PICKFILE_RESULT_CODE = 8778;
     private ArrayList<String> imagePaths;
-    private RecyclerView imagesRV;
-    private RecyclerViewAdapter imageRVAdapter;
     ViewPager viewPager;
     SecretKey key;
     Intent fileIntent;
@@ -56,21 +44,23 @@ public class GridViewActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.recycler_view);
         Toolbar myToolbar = (Toolbar) findViewById(R.id.add_toolbar);
-        //setSupportActionBar(myToolbar);
-
-        fileIntent = new Intent(Intent.ACTION_GET_CONTENT);
-        fileIntent.addCategory(Intent.CATEGORY_OPENABLE);
-        fileIntent.setType("image/*");
 
         key = new SecretKeySpec(Base64.getDecoder().decode(getIntent().getStringExtra("key")), "AES");
         cryptoUtils = new CryptoUtils(getApplicationContext());
 
-        //viewPager = (ViewPager)findViewById(R.id.viewPagerMain);
         imagePaths = new ArrayList<>();
-        imagesRV = findViewById(R.id.idRVImages);
+
+        viewPager = (ViewPager)findViewById(R.id.viewPagerMain);
+
+        // Initializing the ViewPagerAdapter
+        mViewPagerAdapter = new ViewPagerAdapter(SliderViewActivity.this, imagePaths, key);
+
+        // Adding the Adapter to the ViewPager
+
+
 
         requestPermissions();
-        prepareRecyclerView();
+        viewPager.setAdapter(mViewPagerAdapter);
     }
 
     private boolean checkPermission() {
@@ -84,7 +74,6 @@ public class GridViewActivity extends AppCompatActivity {
             // if the permissions are already granted we are calling
             // a method to get all images from our external storage.
             Toast.makeText(this, "Permissions granted..", Toast.LENGTH_SHORT).show();
-            prepareRecyclerView();  // <--- JUST ADD THIS LINE HERE
             getImagePath();
         } else {
             // if the permissions are not granted we are
@@ -100,26 +89,12 @@ public class GridViewActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this, new String[]{READ_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
     }
 
-    private void prepareRecyclerView() {
-        // in this method we are preparing our recycler view.
-        // on below line we are initializing our adapter class.
-        imageRVAdapter = new RecyclerViewAdapter(getApplicationContext(), imagePaths, key);
-
-        // on below line we are creating a new grid layout manager.
-        GridLayoutManager manager = new GridLayoutManager(getApplicationContext(), 4);
-
-        // on below line we are setting layout
-        // manager and adapter to our recycler view.
-        imagesRV.setLayoutManager(manager);
-        imagesRV.setAdapter(imageRVAdapter);
-    }
 
 
     private void getImagePath() {
         for (final File fileEntry : getFilesDir().listFiles()) {
                 imagePaths.add(fileEntry.getName());
         }
-        imageRVAdapter.notifyDataSetChanged();
     }
 
 
