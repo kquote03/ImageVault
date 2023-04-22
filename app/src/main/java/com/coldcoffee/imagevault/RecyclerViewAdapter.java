@@ -73,11 +73,14 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 		// path which we have stored in our list.
 		File imgFile = new File(imagePathArrayList.get(position));
 
-		// on below line we are checking if the file exists or not.
-		if (imgFile.exists() || true) { //TODO actual verification
+
+		if (imgFile.exists() || true) { //TODO actual verification (it doesnt do shit rn lol)
 			try {
+				//We generate the IV
 				IvParameterSpec iv = new IvParameterSpec(Base64.getDecoder().decode(sharedPreferences.getString(imagePathArrayList.get(position),"null").getBytes()));
+				//We get the decrypted data and store it in a Bitmap type
 				Bitmap image = cryptoUtils.getBitmapFromEncryptedImage(imagePathArrayList.get(position), key, iv);
+				//We just set thr imageView to be the image stored in the bitmap
 				holder.imageIV.setImageBitmap(image);
 
 			} catch (IOException e) {
@@ -96,18 +99,24 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 				throw new RuntimeException(e);
 			}
 
-			// if the file exists then we are displaying that file in our image view using picasso library.
 
-			// on below line we are adding click listener to our item of recycler view.
+			/**
+			 * The onClick listener attached to each image card thingy
+			 * We just start a SliderViewActivity and pass to it the
+			 * key. We also give it the image path but we still dont use
+			 * it to be on the correct image lol TODO
+			 */
 			holder.itemView.setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View v) {
 
 					// inside on click listener we are creating a new intent
 					Intent i = new Intent(context, SliderViewActivity.class);
+					//kQuote here, this is needed for android 6 and later.
 					i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-					// on below line we are passing the image path to our new activity.
+					//We pass the image path and key to the SliderViewActivity
+					i.putExtra("key", Base64.getEncoder().encodeToString(key.getEncoded()));
 					i.putExtra("imgPath", imagePathArrayList.get(position));
 
 					// at last we are starting our activity.

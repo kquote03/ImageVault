@@ -43,22 +43,15 @@ public class SliderViewActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.recycler_view);
-        Toolbar myToolbar = (Toolbar) findViewById(R.id.add_toolbar);
 
+        //Get the key
         key = new SecretKeySpec(Base64.getDecoder().decode(getIntent().getStringExtra("key")), "AES");
         cryptoUtils = new CryptoUtils(getApplicationContext());
-
         imagePaths = new ArrayList<>();
 
+        // Initializing the ViewPagerAdapter and adding the adapter
         viewPager = (ViewPager)findViewById(R.id.viewPagerMain);
-
-        // Initializing the ViewPagerAdapter
         mViewPagerAdapter = new ViewPagerAdapter(SliderViewActivity.this, imagePaths, key);
-
-        // Adding the Adapter to the ViewPager
-
-
-
         requestPermissions();
         viewPager.setAdapter(mViewPagerAdapter);
     }
