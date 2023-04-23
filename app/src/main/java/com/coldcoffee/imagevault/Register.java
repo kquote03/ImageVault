@@ -57,7 +57,9 @@ public class Register extends AppCompatActivity {
             public void onClick(View view) {
                 if(username.getText().toString().equals("") || username.getText().equals(null)
                         || Email.getText().toString().equals("") || Email.getText().equals(null)
-                        || password1.getText().toString().equals("") ||  password1.getText().equals(null))
+                        || password1.getText().toString().equals("") ||  password1.getText().equals(null)
+                        || password2.getText().toString().equals("") ||  password2.getText().equals(null)
+                        || !password1.getText().toString().equals(password2.getText().toString()))
                     Toast.makeText(Register.this, "Please make sure the data entered is correct", Toast.LENGTH_LONG).show();
                 else{
                     SharedPreferences.Editor spEditor = sharedPreferences.edit();
