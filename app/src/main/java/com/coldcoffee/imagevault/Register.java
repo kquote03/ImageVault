@@ -69,7 +69,7 @@ public class Register extends AppCompatActivity {
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
-                    Toast.makeText(getApplicationContext(),"Registration successful habibi", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getApplicationContext(),"Registration successful habibi / habibati", Toast.LENGTH_LONG).show();
                     finish();
                 }
 
