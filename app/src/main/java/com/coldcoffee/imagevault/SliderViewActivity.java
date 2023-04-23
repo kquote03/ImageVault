@@ -81,9 +81,13 @@ public class SliderViewActivity extends AppCompatActivity {
 
     private void getImagePath() {
         for (final File fileEntry : getFilesDir().listFiles()) {
-                imagePaths.add(fileEntry.getName());
+            if(fileEntry.getName().equals("random"))
+                continue;
+            imagePaths.add(fileEntry.getName());
+            mViewPagerAdapter.notifyDataSetChanged();
         }
     }
+
 
 
     @Override
