@@ -107,9 +107,11 @@ public class GridViewActivity extends AppCompatActivity {
 
     private void getImagePath() {
         for (final File fileEntry : getFilesDir().listFiles()) {
-                imagePaths.add(fileEntry.getName());
+            if(fileEntry.getName() == "random")
+                continue;
+            imagePaths.add(fileEntry.getName());
+            imageRVAdapter.notifyDataSetChanged();
         }
-        imageRVAdapter.notifyDataSetChanged();
     }
 
 

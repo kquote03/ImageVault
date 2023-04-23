@@ -8,6 +8,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
+import android.util.Log;
+import android.widget.ImageView;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -128,6 +130,15 @@ public class CryptoUtils extends AppCompatActivity {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }    @RequiresApi(api = Build.VERSION_CODES.O)
+    public boolean attemptDecryptFile(String passphrase, String file, byte[] salt, IvParameterSpec iv){
+        try {
+            cryptStream(context.openFileInput(file),getKeyFromPassword(passphrase, salt),Cipher.DECRYPT_MODE, iv);
+        } catch (Exception e) {
+            Log.d("WARN",e.getMessage());
+            return false;
+        }
+        return true;
     }
 
     /**

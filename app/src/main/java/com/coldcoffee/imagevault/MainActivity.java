@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
@@ -47,23 +48,40 @@ public class MainActivity extends AppCompatActivity {
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onClick(View view) {
+                if(username.getText().toString().equals("") || username.getText().equals(null)
+                || password.getText().toString().equals("") || password.getText().equals(null)){
+                    Toast.makeText(getApplicationContext(), "Please verify that the details are correct", Toast.LENGTH_LONG).show();
+                }
                 try {
                     //I know we're not using rust-style unwrapping but it looked cool so i used it 3_3
-                    byte[] salt = Base64
-                            .getDecoder()
-                            .decode(sharedPreferences
-                            .getString("salt",""));
-                    IvParameterSpec iv = new IvParameterSpec(Base64
-                            .getDecoder()
-                            .decode(sharedPreferences.getString("iv","")));
+                    if(sharedPreferences.contains("salt")) {
+                        byte[] salt = Base64
+                                .getDecoder()
+                                .decode(sharedPreferences
+                                        .getString("salt", ""));
+                        IvParameterSpec iv = new IvParameterSpec(Base64
+                                .getDecoder()
+                                .decode(sharedPreferences.getString("iv", "")));
 
-                    secretKey = cryptoUtils.getKeyFromPassword(password.getText().toString(), salt);
+                        secretKey = cryptoUtils.getKeyFromPassword(password.getText().toString(), salt);
 
-                    Intent loggedIn = new Intent(getApplicationContext(), GridViewActivity.class);
-                    loggedIn.putExtra("key", Base64
-                            .getEncoder()
-                            .encodeToString(secretKey.getEncoded()));
-                    startActivity(loggedIn);
+
+                        if (cryptoUtils.attemptDecryptFile(password.getText().toString(), "random", salt, iv)) {
+
+
+                            Intent loggedIn = new Intent(getApplicationContext(), GridViewActivity.class);
+                            loggedIn.putExtra("key", Base64
+                                    .getEncoder()
+                                    .encodeToString(secretKey.getEncoded()));
+                            startActivity(loggedIn);
+                        } else {
+                            Toast.makeText(getApplicationContext(), "Could not decrypt\nPlease verify that the details are correct", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                    else{
+                        Toast.makeText(getApplicationContext(), "Please register first", Toast.LENGTH_LONG).show();
+
+                    }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
